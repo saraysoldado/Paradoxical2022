@@ -1,15 +1,15 @@
-%% Permanent Up DEMO
+%% Based on Jercog et al 2017
+% Permanent Up DEMO under classic homeostatic plasticity
 % ssaray@ucla.edu
 % dbuono@ucla.edu
-
-%% 4 weight plasticity DEMO
+%%
 clear all
 close all
 
-WEE = 2.1;   %2.1
-WEI = 3;     %3  
-WIE = 4;     %4
-WII = 1.5;     %2
+WEE = 2.1;   
+WEI = 3;    
+WIE = 4;    
+WII = 1.5;    
 
 thetaE = 4.8;
 thetaI = 25;
@@ -17,7 +17,7 @@ gainE = 1;
 gainI = 4;
 
 HOMEOSTATIC_FLAG = 1;
-VIDEO = 1; 
+VIDEO = 0; 
 
 testrules = 'homeo';
 
@@ -43,11 +43,6 @@ nTrial=500;
 
 savetrials=[1,140,200,302,497]; %NOTE: displayed trials numbers on the paper figure were rounded for simplicity. 
 
-
-%%
-
-% Based on Rocha_2017
-% Includes Homeostatic plasticity Up State Development
 
 dt = 0.0001; %IN SECONDS
 tmax   = 2/dt; %
@@ -198,9 +193,9 @@ ExAvg = 0;
 InhAvg = 0;
       
 % Ornstein Uhlenbeck Noise
-OUtau = 1/10;
+OUtau = 0.1;
 OUmu = 0;
-OUsigma = 0.1; %
+OUsigma = 0.1; %sigma * sqrt(dt)
 OUE = 0;
 OUI = 0;
 

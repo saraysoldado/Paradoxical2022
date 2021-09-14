@@ -1,15 +1,15 @@
-%% Permanent Up DEMO
+%% Based on Jercog et al 2017
+% Permanent Up DEMO under cross-homeostatic plasticity
 % ssaray@ucla.edu
 % dbuono@ucla.edu
-
-%% 4 weight plasticity DEMO
+%%
 clear all
 close all
 
-WEE = 2.1;   %2.1
-WEI = 3;     %3  
-WIE = 4;     %4
-WII = 1.5;     %2
+WEE = 2.1;  
+WEI = 3;     
+WIE = 4;    
+WII = 1.5;     
 
 thetaE = 4.8;
 thetaI = 25;
@@ -17,7 +17,7 @@ gainE = 1;
 gainI = 4;
 
 HOMEOSTATIC_FLAG = 1;
-VIDEO = 1; 
+VIDEO = 0; 
 
 testrules = 'cross-homeo';
 
@@ -42,11 +42,6 @@ WIE_MIN = 0.1;
 nTrial=500; 
 savetrials=[1,20,100,nTrial];
 
-
-%%
-
-% Based on Rocha_2017
-% Includes Homeostatic plasticity Up State Development
 
 dt = 0.0001; %IN SECONDS
 tmax   = 2/dt; %
@@ -111,18 +106,10 @@ rng(42) %fixed seed
 if GRAPHICS
     h = figure('Position',[1 1 1200 900]);
         set(gcf,'color','w');
-
-%set(gcf,'Position',[1 1 1200 900])
-%set(gcf,'Position',[1 1 800 900])
-
-%RBmap = RedBlueColormap(3);
 subplot(3,1,1)
 colormap = [ 255/255,51/255,51/255; 0 0.5 0; 0 0 1];
 set(gca,'colororder',colormap);
 hold on
-% plot(dt:dt:tmax*dt,hR,'ydatasource','hR','linewidth',3);
-% line([dt tmax*dt],[ExSet ExSet],'color',[0 0.5 0],'linestyle',':','linewidth',2);
-% line([dt tmax*dt],[InhSet InhSet],'color',[1 0 0],'linestyle',':','linewidth',3);
 plot(dt-EvokedOn*dt:dt:tmax*dt-EvokedOn*dt,hR,'ydatasource','hR','linewidth',3);
 line([dt-EvokedOn*dt tmax*dt-EvokedOn*dt],[ExSet ExSet],'color',[0 0.5 0],'linestyle','--','linewidth',2);
 line([dt-EvokedOn*dt tmax*dt-EvokedOn*dt],[InhSet InhSet],'color',[255/255,51/255,51/255],'linestyle','--','linewidth',2);
@@ -197,9 +184,9 @@ ExAvg = 0;
 InhAvg = 0;
       
 % Ornstein Uhlenbeck Noise
-OUtau = 1/10;
+OUtau = 0.1;
 OUmu = 0;
-OUsigma = 0.1; %
+OUsigma = 0.1; %sigma * sqrt(dt)
 OUE = 0;
 OUI = 0;
 

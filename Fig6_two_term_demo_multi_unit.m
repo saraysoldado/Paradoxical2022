@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Multi-unit rate-based population model with homeostatic Up development rules. 
+% Multi-unit rate-based population model with two-term homeostatic Up development rules. 
 % ssaray@ucla.edu
-%
+% dbuono@ucla.edu
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SIMULATION SETTINGS %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,7 +20,7 @@ VIDEO =0;
 HOMEOSTATIC_FLAG = 1;
 
 
-learning_rule= 'two-factor'; 
+learning_rule= 'two-term'; 
 
 savetrials = [1,2,5,40,200]; 
 
@@ -37,8 +37,8 @@ thetaI = 25;
 gainE = 1;
 gainI = 4;
 
-Etau = 10/(dt*1000); %10
-Itau = 2/(dt*1000);  %2
+Etau = 10/(dt*1000); 
+Itau = 2/(dt*1000);  
 
 Beta = 0;
 tauA = 500;
@@ -46,9 +46,9 @@ tauA = 500;
 E_MAX = 100;
 I_MAX = 250;
 
-OUtau = 1/10; %Ornstein-Uhlenbeck Noise
+OUtau = 0.1; %Ornstein-Uhlenbeck Noise
 OUmu = 0;
-OUsigma = 0.1; 
+OUsigma = 0.1; % sigma * sqrt(dt)
 
 OUE = zeros(Ne,1);
 OUI = zeros(Ni,1);
@@ -56,8 +56,6 @@ OUI = zeros(Ni,1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% INIT WEIGHT MATRIX %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% COMPLETELY RANDOM
 
 WEE = rand(Ne,Ne)*0.16; 
 WEE = WEE - diag(diag(WEE));
@@ -88,7 +86,7 @@ initWIIp = WIIp;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ExSet = 5; %setpoint for excitatory neurons
-InhSet = 14; 
+InhSet = 14; %setpoint for inhibitory neurons
 
 tau_trial = 2 ;
 
@@ -97,7 +95,7 @@ WEE_MIN = 0.1;
 WII_MIN = 0.1;
 WIE_MIN = 0.1;
 
-alpha = 0.00001; %learning rate 0.00001 / 0.00002
+alpha = 0.00001; %learning rate 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% INIT VARS %%%%%%%%%%%%%%%%%%%%%%
@@ -120,8 +118,8 @@ hR = zeros(tmax,Ne+Ni); %history of Inh and Ex rate
 
 
 EvokedOn = 0.250/dt; %Evoked current
-EvokedDur = 0.01/dt; %0.01
-EvokedAmp = 7; %7
+EvokedDur = 0.01/dt; 
+EvokedAmp = 7; 
 
 counter = 0;  
 
@@ -130,7 +128,7 @@ counter = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if GRAPHICS
-    multi_unit_UpDev_graphics_twofactor
+    Fig6_two_term_demo_multi_unit_graphics
 end
 
 if VIDEO
@@ -180,7 +178,7 @@ for trial=1:nTrial
          
          
       end
-         [UpFreq, UpDur] = RasterFindUpStates(hR',1,0.1);
+      
 
          ExAvg    = ExAvg  + (-ExAvg  + mean(fCa(:,end-0.5/dt:end),2))/tau_trial; %we average at the end of the trial to avoid evoked
          InhAvg   = InhAvg + (-InhAvg + mean(fCaInh(:,end-0.5/dt:end),2))/tau_trial;
@@ -215,25 +213,15 @@ for trial=1:nTrial
       iyfit = iP(1)*ix+iP(2);
       
       
-      if HOMEOSTATIC_FLAG %&& trial>10
+      if HOMEOSTATIC_FLAG 
           
   
 
-            EAvg =  max(1,ExAvg); %For trials that start with 0 rate (development settings), otherwise weights would never move
+            EAvg =  max(1,ExAvg); %Average activity is rectified,for trials that start with 0 rate (development settings), otherwise weights would never move
             IAvg = max(1,InhAvg);
+                       
             
-            
-%             newWEE = WEE + alpha*ExAvg'*(sum(InhSet-InhAvg)/Ni) + alpha*(ExSet-ExAvg)*ExAvg'; %works well
-%             newWEE = newWEE - diag(diag(newWEE));
-%             
-%             newWEI = WEI - alpha*InhAvg'*(sum(InhSet-InhAvg)/Ni) - alpha*(ExSet-ExAvg)*InhAvg';
-% 
-%             newWIE = WIE - alpha*ExAvg'*(sum(ExSet-ExAvg)/Ne) + alpha*(InhSet-InhAvg)*ExAvg'; 
-%          
-%             newWII = WII + alpha*InhAvg'*(sum(ExSet-ExAvg)/Ne) - alpha*(InhSet-InhAvg)*InhAvg'; 
-%             newWII = newWII - diag(diag(newWII));
-            
-             newWEE = WEE + alpha*EAvg'*(sum(InhSet-IAvg)/Ni) + alpha*(ExSet-EAvg)*EAvg'; %works well
+            newWEE = WEE + alpha*EAvg'*(sum(InhSet-IAvg)/Ni) + alpha*(ExSet-EAvg)*EAvg';
             newWEE = newWEE - diag(diag(newWEE));
             
             newWEI = WEI - alpha*IAvg'*(sum(InhSet-IAvg)/Ni) - alpha*(ExSet-EAvg)*IAvg';
@@ -262,18 +250,15 @@ for trial=1:nTrial
 
       end
      %%
-     
-      
-      
-      
+          
       
       if GRAPHICS %&& rem(trial,10)==0
       refreshdata(h1) 
       drawnow   
       
           if ismember(trial,savetrials)
-              saveas(gcf,['trial',num2str(trial)],'jpg')
-              saveas(gcf,['trial',num2str(trial)],'svg')
+              %saveas(gcf,['trial',num2str(trial)],'jpg')
+              %saveas(gcf,['trial',num2str(trial)],'svg')
 
           end
       
@@ -288,7 +273,7 @@ for trial=1:nTrial
  end
    
  Wend = [WEE,WEI;WIE,WII];  
- save(['METApopmodel_',learning_rule,'Ex',num2str(ExSet),'Inh',num2str(InhSet),'.mat'])
+ %save(['METApopmodel_',learning_rule,'Ex',num2str(ExSet),'Inh',num2str(InhSet),'.mat'])
  
    if VIDEO
     video = VideoWriter([learning_rule,'_MultiUnit_demo']);
@@ -302,72 +287,29 @@ for trial=1:nTrial
    
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%
+%% final PLOTTING %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if GRAPHICS   
 
     figure('Position', [10 10 1300 500]);     
-     subplot(1,2,1)
-     
-
+     subplot(1,2,1)     
      imagesc(Winit)
-     cMap = getPyPlot_cMap('coolwarm',128);
-     %cMap = getPyPlot_cMap('bone_r',128);
-     colormap(cMap);
+%      cMap = getPyPlot_cMap('coolwarm',128);
+%      colormap(cMap);
      colorbar
      xlabel('pre')
      ylabel('post')
      title('pre training')    
-     subplot(1,2,2)
+    subplot(1,2,2)
     imagesc(Wend)
     colorbar
     xlabel('pre')
     ylabel('post')
     title('post training')
-    saveas(gcf,'Winitend','jpg')
-    saveas(gcf,'Winitend','svg')
+%     saveas(gcf,'Winitend','jpg')
+%     saveas(gcf,'Winitend','svg')
     
-    %% with inhibitory weights negative
-
-Winit2 = Winit .* [ones(Ne+Ni,Ne),ones(Ne+Ni,Ni)*-1] ;
-Wend2 = Wend .* [ones(Ne+Ni,Ne),ones(Ne+Ni,Ni)*-1] ;
-
-
-%cMapwarm = getPyPlot_cMap('RdBu',128);
-%cMapwarm = getPyPlot_cMap('bwr_r',128);
-cMapwarm = getPyPlot_cMap('Reds_r',128);
-cMapprgn = getPyPlot_cMap('PRGn',128);
-
-idx=[128:-1:64];
-%map_green_red = [cMapwarm(1:64,:);cMapprgn(64:end,:)];
-map_green_red = [cMapwarm(1:2:128,:);cMapprgn(64:end,:)];
-
-%%
-figure('Position', [10 10 1300 500]);     
-     subplot(1,2,1)
-     imagesc(Winit2)
-     %cMap = getPyPlot_cMap('coolwarm',128);
-     %cMap = getPyPlot_cMap('bone',128);
-     %cMap = getPyPlot_cMap('bone_r',128);
-     %cMap = getPyPlot_cMap('RdYlGn',128);
-     %cMap = getPyPlot_cMap('PRGn',128);
-     %colormap(cMap);
-     colormap(map_green_red);
-     colorbar
-     caxis([-0.2 0.2])
-     xlabel('pre')
-     ylabel('post')
-     title('pre training')    
-     subplot(1,2,2)
-    imagesc(Wend2)
-    colorbar
-    caxis([-0.2 0.2])
-    xlabel('pre')
-    ylabel('post')
-    title('post training')
-    saveas(gcf,'Winitend','jpg')
-    saveas(gcf,'Winitend','svg')
 
     %%
     figure
@@ -380,7 +322,7 @@ figure('Position', [10 10 1300 500]);
     histogram(Winit(1:Ne,Ne+1:end))
     hold on
     histogram(WEI)
-    legend('pre','post')
+    legend('init','end')
     xlabel('WEI')
     subplot(2,2,3)
     histogram(Winit(Ne+1:end,1:Ne))
@@ -392,11 +334,11 @@ figure('Position', [10 10 1300 500]);
     hold on
     histogram(WII)
     xlabel('WII')
-    saveas(gcf,'Winitendhistogram','jpg')
+    %saveas(gcf,'Winitendhistogram','jpg')
 
     %%
-    figure('Position', [10 10 1200 500]);     
-     %suptitle(['Total current per neuron ',titlet])
+     figure('Position', [10 10 1200 500]);     
+     sgtitle('Total currents')
      subplot(1,2,1)
      plot(WEE*E,WEI*I,'o','color',[0 0.5 0])
      xlabel('WEE*E')
@@ -430,11 +372,11 @@ figure('Position', [10 10 1300 500]);
     yfit = P(1)*x+P(2);
     plot(x,yfit,'b','LineWidth',2);
     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-    saveas(gcf,'currents','jpg')
+    %saveas(gcf,'currents','jpg')
     
     %%
     figure('Position', [10 10 1200 500]);     
-     %suptitle(['Total current per neuron ',titlet])
+     sgtitle('W end')
      subplot(1,2,1)
      scatter(WEEp,WEIp,[60],'filled','MarkerFaceColor',[0 0.5 0],'MarkerFaceAlpha',0.6)
      %plot(WEEp,WEIp,'o','color',[0 0.5 0])
@@ -481,13 +423,13 @@ figure('Position', [10 10 1300 500]);
 % newWII = (newWIE*ExSet - thetaI)/InhSet - 1/gainI; 
 % plot(newWIE,newWII,'b','linewidth',1,'color',[0, 0.4470, 0.7410])
 
-    saveas(gcf,'preW','jpg')
-    saveas(gcf,'preW','svg')
+%     saveas(gcf,'preW','jpg')
+%     saveas(gcf,'preW','svg')
 
     %%
      %%
     figure('Position', [10 10 1200 500]);     
-     %suptitle(['Total current per neuron ',titlet])
+      sgtitle('W init')
      subplot(1,2,1)
      scatter(initWEEp,initWEIp,[60],'filled','MarkerFaceColor',[0 0.5 0],'MarkerFaceAlpha',0.6)
      %plot(initWEEp,initWEIp,'o','color',[0 0.5 0])
@@ -524,8 +466,8 @@ figure('Position', [10 10 1300 500]);
     yfit = P(1)*x+P(2);
     plot(x,yfit,'b','LineWidth',2,'color',[0, 0.4470, 0.7410]);
     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-    saveas(gcf,'preWinit','jpg')
-    saveas(gcf,'preWinit','svg')
+%     saveas(gcf,'preWinit','jpg')
+%     saveas(gcf,'preWinit','svg')
 
     %%
     
@@ -535,7 +477,7 @@ figure('Position', [10 10 1300 500]);
       WIIpo = sum(WII,1);
       
     figure('Position', [10 10 1200 500]);     
-     %suptitle(['Total current per neuron ',titlet])
+     sgtitle('Corr input-output weights')
      subplot(1,2,1)
      plot(WEEp,WEEpo,'o','color',[0 0.5 0])
      xlabel('WEEp')
@@ -569,7 +511,7 @@ figure('Position', [10 10 1300 500]);
     yfit = P(1)*x+P(2);
     plot(x,yfit,'b','LineWidth',2);
     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-    saveas(gcf,'outputW','jpg')
+    %saveas(gcf,'outputW','jpg')
 
 
 end

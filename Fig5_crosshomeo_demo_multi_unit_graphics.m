@@ -1,6 +1,7 @@
 
 %called by multi_unit_Up_Dev
 %ssaray@ucla.edu
+%dbuono@ucla.edu
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%
@@ -47,8 +48,8 @@ if(1)
         set(gca,'FontSize',12)
 
         
-        %subplot(5,2,[9 10])
-        subplot(5,2,9)
+        subplot(5,2,[9 10])
+        %subplot(5,2,9)
         plot(NaN(nTrial,20),'color',[77/255 166/255 77/255 0.25],'ydatasource','trialhistFCa(:,1:20)','linewidth',1);%[0 0.5 0]
         hold on
         plot(NaN(nTrial,1),'color',[77/255 166/255 77/255],'ydatasource','nanmean(trialhistFCa,2)','linewidth',4);%[0 0.5 0]
