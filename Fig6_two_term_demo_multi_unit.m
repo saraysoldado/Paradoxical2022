@@ -1,8 +1,9 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Multi-unit rate-based population model with two-term homeostatic Up development rules. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Multi-unit rate-based population model with two-term homeostatic Up development rules 
+% Based on Jercog et al (2017) https://elifesciences.org/articles/22425
 % ssaray@ucla.edu
 % dbuono@ucla.edu
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SIMULATION SETTINGS %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -20,9 +21,9 @@ VIDEO =0;
 HOMEOSTATIC_FLAG = 1;
 
 
-learning_rule= 'two-term'; 
+learning_rule= 'two_term'; 
 
-savetrials = [1,2,5,40,200]; 
+%savetrials = [1,2,5,40,200]; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEURON PARAMETERS %%%%%%%%%%%%%%
@@ -49,9 +50,6 @@ I_MAX = 250;
 OUtau = 0.1; %Ornstein-Uhlenbeck Noise
 OUmu = 0;
 OUsigma = 0.1; % sigma * sqrt(dt)
-
-OUE = zeros(Ne,1);
-OUI = zeros(Ni,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% INIT WEIGHT MATRIX %%%%%%%%%%%%%
@@ -122,6 +120,9 @@ EvokedDur = 0.01/dt;
 EvokedAmp = 7; 
 
 counter = 0;  
+
+OUE = zeros(Ne,1);
+OUI = zeros(Ni,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PLOTTING %%%%%%%%%%%%%%%%%%%%%%%
