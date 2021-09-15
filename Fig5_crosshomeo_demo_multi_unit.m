@@ -254,11 +254,11 @@ for trial=1:nTrial
       refreshdata(h1) 
       drawnow   
       
-          if ismember(trial,savetrials)
-              %saveas(gcf,['trial',num2str(trial)],'jpg')
-              %saveas(gcf,['trial',num2str(trial)],'svg')
-
-          end
+%           if ismember(trial,savetrials)
+%               saveas(gcf,['trial',num2str(trial)],'jpg')
+%               saveas(gcf,['trial',num2str(trial)],'svg')
+% 
+%           end
       
       end
       
