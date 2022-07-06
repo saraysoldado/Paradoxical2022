@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Multi-unit rate-based population model with two-term homeostatic Up development rules 
+% Multi-unit rate-based model with two-term homeostatic ISN development rules 
 % Based on Jercog et al (2017) https://elifesciences.org/articles/22425
 % ssaray@ucla.edu
 % dbuono@ucla.edu
@@ -11,8 +11,8 @@ clear all
 close all
 
 dt = 0.0001; %IN SECONDS
-tmax   = 2/dt; %
-nTrial = 200; %100
+tmax   = 2/dt; 
+nTrial = 250; 
 
 rng(44)
     
@@ -23,7 +23,7 @@ HOMEOSTATIC_FLAG = 1;
 
 learning_rule= 'two_term'; 
 
-%savetrials = [1,2,5,40,200]; 
+%savetrials = [1,2,5,40,nTrial]; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% NEURON PARAMETERS %%%%%%%%%%%%%%
@@ -55,20 +55,24 @@ OUsigma = 0.1; % sigma * sqrt(dt)
 %% INIT WEIGHT MATRIX %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-WEE = rand(Ne,Ne)*0.16; 
+sigmaw = 0.04; %normally distributed weights with meanw and sigmaw
+meanw = 0.1; 
+
+WEE = meanw +randn(Ne,Ne)*sigmaw; 
 WEE = WEE - diag(diag(WEE));
 
-WEI = rand(Ne,Ni)*0.16;
+WEI = meanw +randn(Ne,Ni)*sigmaw;
 
-WIE= rand(Ni,Ne)*0.16;
+WIE= meanw +randn(Ni,Ne)*sigmaw;
 
-WII = rand(Ni,Ni)*0.16;
+WII = meanw +randn(Ni,Ni)*sigmaw;
 WII = WII - diag(diag(WII));
+
 
 %%
 Winit = [WEE,WEI;WIE,WII];
 
-WEEp = sum(WEE,2);
+WEEp = sum(WEE,2); %sum of presynaptic weights
 WEIp = sum(WEI,2);
 WIEp = sum(WIE,2);
 WIIp = sum(WII,2);
@@ -203,11 +207,12 @@ for trial=1:nTrial
       trialhistWIEp(trial,:) = WIEp;
       trialhistWIIp(trial,:) = WIIp;
       
-      x=WEEp;
+      x=WEEp; %find correlation between E - I weights
       y1=WEIp;
       [R,p] = corr(x,y1,'rows','complete');
       P = polyfit(x,y1,1);
-      yfit = P(1)*x+P(2);ix=WIEp;
+      yfit = P(1)*x+P(2);
+      ix=WIEp;
       iy1=WIIp;
       [iR,ip] = corr(ix,iy1,'rows','complete');
       iP = polyfit(ix,iy1,1);
@@ -216,7 +221,6 @@ for trial=1:nTrial
       
       if HOMEOSTATIC_FLAG 
           
-  
 
             EAvg =  max(1,ExAvg); %Average activity is rectified,for trials that start with 0 rate (development settings), otherwise weights would never move
             IAvg = max(1,InhAvg);
@@ -293,26 +297,33 @@ for trial=1:nTrial
 
 if GRAPHICS   
 
-    figure('Position', [10 10 1300 500]);     
-     subplot(1,2,1)     
-     imagesc(Winit)
-%      cMap = getPyPlot_cMap('coolwarm',128);
-%      colormap(cMap);
+%% Weight matrix winit vs wend
+
+Winit2 = Winit .* [ones(Ne+Ni,Ne),ones(Ne+Ni,Ni)*-1] ;     % make inhibitory weights negative
+
+Wend2 = Wend .* [ones(Ne+Ni,Ne),ones(Ne+Ni,Ni)*-1] ;
+
+figure('Position', [10 10 1300 500]);     
+     subplot(1,2,1)
+     imagesc(Winit2)    
+     cMap = getPyPlot_cMap('coolwarm',128);
+     colormap(cMap);
      colorbar
+     caxis([-0.25 0.25])
      xlabel('pre')
      ylabel('post')
      title('pre training')    
-    subplot(1,2,2)
-    imagesc(Wend)
+     subplot(1,2,2)
+    imagesc(Wend2)
     colorbar
+    caxis([-0.25 0.25])
     xlabel('pre')
     ylabel('post')
     title('post training')
-%     saveas(gcf,'Winitend','jpg')
-%     saveas(gcf,'Winitend','svg')
-    
+%     saveas(gcf,'Winitendcolor','jpg')
+%     saveas(gcf,'Winitendcolor','svg')
 
-    %%
+    %% Histogram winit vs wend
     figure
     subplot(2,2,1)
     histogram(Winit(1:Ne,1:Ne))
@@ -323,7 +334,7 @@ if GRAPHICS
     histogram(Winit(1:Ne,Ne+1:end))
     hold on
     histogram(WEI)
-    legend('init','end')
+    legend('pre','post')
     xlabel('WEI')
     subplot(2,2,3)
     histogram(Winit(Ne+1:end,1:Ne))
@@ -335,107 +346,15 @@ if GRAPHICS
     hold on
     histogram(WII)
     xlabel('WII')
-    %saveas(gcf,'Winitendhistogram','jpg')
-
-    %%
-     figure('Position', [10 10 1200 500]);     
-     sgtitle('Total currents')
-     subplot(1,2,1)
-     plot(WEE*E,WEI*I,'o','color',[0 0.5 0])
-     xlabel('WEE*E')
-     ylabel('WEI*I')
-     set(gca,'FontSize',20)
-    set(findobj(gca,'type','line'),'linew',3)
-    set(gca,'linew',4)
-    set(gca, 'box', 'off')
-    hold on
-    x=WEE*E;
-    y1=WEI*I;
-    [R,p] = corr(x,y1,'rows','complete');
-    P = polyfit(x,y1,1);
-    yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2);
-    title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-
-    subplot(1,2,2)
-     plot(WIE*E,WII*I,'o','color',[1 0 0])
-     xlabel('WIE*E')
-     ylabel('WII*I')
-     set(gca,'FontSize',20)
-    set(findobj(gca,'type','line'),'linew',3)
-    set(gca,'linew',4)
-    set(gca, 'box', 'off')
-    hold on
-    x=WIE*E;
-    y1=WII*I;
-    [R,p] = corr(x,y1,'rows','complete');
-    P = polyfit(x,y1,1);
-    yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2);
-    title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-    %saveas(gcf,'currents','jpg')
+%     saveas(gcf,'Winitendhistogram','jpg')
     
-    %%
+    %% E-I init
+     
     figure('Position', [10 10 1200 500]);     
-     sgtitle('W end')
-     subplot(1,2,1)
-     scatter(WEEp,WEIp,[60],'filled','MarkerFaceColor',[0 0.5 0],'MarkerFaceAlpha',0.6)
-     %plot(WEEp,WEIp,'o','color',[0 0.5 0])
-     xlabel('WEE')
-     ylabel('WEI')
-     set(gca,'FontSize',20)
-    set(findobj(gca,'type','line'),'linew',3)
-    set(gca,'linew',4)
-    set(gca, 'box', 'off')
-    hold on
-    
-    x=WEEp;
-    y1=WEIp;
-    [R,p] = corr(x,y1,'rows','complete');
-    P = polyfit(x,y1,1);
-    yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2,'color',[0, 0.4470, 0.7410]);
-    title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-
-% newWEE=6:8;
-% newWEI = (ExSet/InhSet) * newWEE - ExSet/(InhSet*gainE) - thetaE/InhSet;
-% plot(newWEE,newWEI,'b','linewidth',1,'color',[0, 0.4470, 0.7410])
-
-    subplot(1,2,2)
-    scatter(WIEp,WIIp,[60],'filled','MarkerFaceColor',[1 0 0],'MarkerFaceAlpha',0.6)
-     %plot(WIEp,WIIp,'o','color',[1 0 0])
-     xlabel('WIE')
-     ylabel('WII')
-     set(gca,'FontSize',20)
-    set(findobj(gca,'type','line'),'linew',3)
-    set(gca,'linew',4)
-    set(gca, 'box', 'off')
-    hold on
-    
-    x=WIEp;
-    y1=WIIp;
-    [R,p] = corr(x,y1,'rows','complete');
-    P = polyfit(x,y1,1);
-    yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2,'color',[0, 0.4470, 0.7410]);
-    title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-
-% newWIE=7.5:9.5;
-% newWII = (newWIE*ExSet - thetaI)/InhSet - 1/gainI; 
-% plot(newWIE,newWII,'b','linewidth',1,'color',[0, 0.4470, 0.7410])
-
-%     saveas(gcf,'preW','jpg')
-%     saveas(gcf,'preW','svg')
-
-    %%
-     %%
-    figure('Position', [10 10 1200 500]);     
-      sgtitle('W init')
      subplot(1,2,1)
      scatter(initWEEp,initWEIp,[60],'filled','MarkerFaceColor',[0 0.5 0],'MarkerFaceAlpha',0.6)
-     %plot(initWEEp,initWEIp,'o','color',[0 0.5 0])
-     xlabel('WEE')
-     ylabel('WEI')
+     xlabel('WEE init')
+     ylabel('WEI init')
      set(gca,'FontSize',20)
     set(findobj(gca,'type','line'),'linew',3)
     set(gca,'linew',4)
@@ -451,11 +370,11 @@ if GRAPHICS
 
     subplot(1,2,2)
      scatter(initWIEp,initWIIp,[60],'filled','MarkerFaceColor',[1 0 0],'MarkerFaceAlpha',0.6)
-     %plot(initWIEp,initWIIp,'o','color',[1 0 0])
-     xlabel('WIE')
-     ylabel('WII')
+     xlabel('WIE init')
+     ylabel('WII init')
      set(gca,'FontSize',20)
-     xlim([5.6 8.1])
+      xlim([7.4 8.6])
+      ylim([1.4 2.3])
     set(findobj(gca,'type','line'),'linew',3)
     set(gca,'linew',4)
     set(gca, 'box', 'off')
@@ -470,49 +389,129 @@ if GRAPHICS
 %     saveas(gcf,'preWinit','jpg')
 %     saveas(gcf,'preWinit','svg')
 
-    %%
-    
-      WEEpo = sum(WEE,1); %update sum of presynaptic weights for plot
-      WEIpo = sum(WEI,1);
-      WIEpo = sum(WIE,1);
-      WIIpo = sum(WII,1);
-      
+
+  
+    %% E-I end
     figure('Position', [10 10 1200 500]);     
-     sgtitle('Corr input-output weights')
      subplot(1,2,1)
-     plot(WEEp,WEEpo,'o','color',[0 0.5 0])
-     xlabel('WEEp')
-     ylabel('WEEpo')
+     scatter(WEEp,WEIp,[60],'filled','MarkerFaceColor',[0 0.5 0],'MarkerFaceAlpha',0.6)
+     xlabel('WEE final')
+     ylabel('WEI final')
      set(gca,'FontSize',20)
     set(findobj(gca,'type','line'),'linew',3)
     set(gca,'linew',4)
     set(gca, 'box', 'off')
+    xlim([7.5 9.5])
     hold on
     x=WEEp;
-    y1=WEEpo';
+    y1=WEIp;
     [R,p] = corr(x,y1,'rows','complete');
     P = polyfit(x,y1,1);
     yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2);
+    plot(x,yfit,'b','LineWidth',2,'color',[0, 0.4470, 0.7410]);
     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
 
     subplot(1,2,2)
-     plot(WIEp,WEIpo,'o','color',[1 0 0])
-     xlabel('WIEp')
-     ylabel('WEIpo')
+    scatter(WIEp,WIIp,[60],'filled','MarkerFaceColor',[1 0 0],'MarkerFaceAlpha',0.6)
+     xlabel('WIE final')
+     ylabel('WII final')
      set(gca,'FontSize',20)
     set(findobj(gca,'type','line'),'linew',3)
     set(gca,'linew',4)
     set(gca, 'box', 'off')
+    xlim([8.5 11])     
     hold on
     x=WIEp;
-    y1=WEIpo';
+    y1=WIIp;
     [R,p] = corr(x,y1,'rows','complete');
     P = polyfit(x,y1,1);
     yfit = P(1)*x+P(2);
-    plot(x,yfit,'b','LineWidth',2);
+    plot(x,yfit,'b','LineWidth',2,'color',[0, 0.4470, 0.7410]);
     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
-    %saveas(gcf,'outputW','jpg')
+%     saveas(gcf,'preW','jpg')
+%     saveas(gcf,'preW','svg')
+
+   
+%       %% Currents end
+%     figure('Position', [10 10 1200 500]);     
+%      subplot(1,2,1)
+%      plot(WEE*E,WEI*I,'o','color',[0 0.5 0])
+%      xlabel('WEE*E')
+%      ylabel('WEI*I')
+%      set(gca,'FontSize',20)
+%     set(findobj(gca,'type','line'),'linew',3)
+%     set(gca,'linew',4)
+%     set(gca, 'box', 'off')
+%     hold on
+%     x=WEE*E;
+%     y1=WEI*I;
+%     [R,p] = corr(x,y1,'rows','complete');
+%     P = polyfit(x,y1,1);
+%     yfit = P(1)*x+P(2);
+%     plot(x,yfit,'b','LineWidth',2);
+%     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
+% 
+%     subplot(1,2,2)
+%      plot(WIE*E,WII*I,'o','color',[1 0 0])
+%      xlabel('WIE*E')
+%      ylabel('WII*I')
+%      set(gca,'FontSize',20)
+%     set(findobj(gca,'type','line'),'linew',3)
+%     set(gca,'linew',4)
+%     set(gca, 'box', 'off')
+%     hold on
+%     x=WIE*E;
+%     y1=WII*I;
+%     [R,p] = corr(x,y1,'rows','complete');
+%     P = polyfit(x,y1,1);
+%     yfit = P(1)*x+P(2);
+%     plot(x,yfit,'b','LineWidth',2);
+%     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
+%     saveas(gcf,'currents','jpg')
+%     
+%     
+%     %% Presynaptic vs postsynaptic weights 
+%     
+%       WEEpo = sum(WEE,1); %update sum of postsynaptic weights 
+%       WEIpo = sum(WEI,1);
+%       WIEpo = sum(WIE,1);
+%       WIIpo = sum(WII,1);
+%       
+%     figure('Position', [10 10 1200 500]);     
+%      subplot(1,2,1)
+%      plot(WEEp,WEEpo,'o','color',[0 0.5 0])
+%      xlabel('WEEp')
+%      ylabel('WEEpo')
+%      set(gca,'FontSize',20)
+%     set(findobj(gca,'type','line'),'linew',3)
+%     set(gca,'linew',4)
+%     set(gca, 'box', 'off')
+%     hold on
+%     x=WEEp;
+%     y1=WEEpo';
+%     [R,p] = corr(x,y1,'rows','complete');
+%     P = polyfit(x,y1,1);
+%     yfit = P(1)*x+P(2);
+%     plot(x,yfit,'b','LineWidth',2);
+%     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
+% 
+%     subplot(1,2,2)
+%      plot(WIEp,WEIpo,'o','color',[1 0 0])
+%      xlabel('WIEp')
+%      ylabel('WEIpo')
+%      set(gca,'FontSize',20)
+%     set(findobj(gca,'type','line'),'linew',3)
+%     set(gca,'linew',4)
+%     set(gca, 'box', 'off')
+%     hold on
+%     x=WIEp;
+%     y1=WEIpo';
+%     [R,p] = corr(x,y1,'rows','complete');
+%     P = polyfit(x,y1,1);
+%     yfit = P(1)*x+P(2);
+%     plot(x,yfit,'b','LineWidth',2);
+%     title(['R = ',num2str(R),'p = ',num2str(p)],'FontSize',15)
+%     saveas(gcf,'outputW','jpg')
 
 
 end

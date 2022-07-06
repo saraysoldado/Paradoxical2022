@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Rate-based population model with homeostatic Up development rules 
+% Rate-based population model with homeostatic ISN development rules 
 % Based on Jercog et al (2017) https://elifesciences.org/articles/22425
 % ssaray@ucla.edu
 % dbuono@ucla.edu
